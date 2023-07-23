@@ -1,16 +1,21 @@
-use actix_web::{web, App, HttpRequest, HttpServer, Responder};
-use std::io;
+//! main.rs
+//!
 
-async fn greet(req: HttpRequest) -> impl Responder {
-    let name = req.match_info().get("name").unwrap_or("World");
-    format!("Hello {}!", &name)
-}
+use newsletter::configuration::get_configuration;
+use newsletter::startup::run;
+use sqlx::{Connection, PgConnection};
+use std::net::TcpListener;
 
 #[tokio::main]
-async fn main() -> io::Result<()> {
-    HttpServer::new(|| {
-        App::new()
-        .route("/", web::get().to(greet))
-        .route("/{name}", web::get().to(greet))
-    }).bind("127.0.0.1:8000")?.run().await
+async fn main() -> std::io::Result<()> {
+    let configuration = get_configuration().expect("Failed to read configuration.");
+    let connection = PgConnection::connect(&configuration.database.connection_string())
+        .await
+        .expect("Failed to connect to Postgres.");
+
+    let addrs = format!("127.0.0.1:{}", configuration.application_port);
+    let listener = TcpListener::bind(addrs)?;
+
+    let server = run(listener, connection).await?;
+    server.await
 }
