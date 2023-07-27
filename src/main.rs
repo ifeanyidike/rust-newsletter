@@ -3,19 +3,19 @@
 
 use newsletter::configuration::get_configuration;
 use newsletter::startup::run;
-use sqlx::{Connection, PgConnection};
+use sqlx::PgPool;
 use std::net::TcpListener;
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
     let configuration = get_configuration().expect("Failed to read configuration.");
-    let connection = PgConnection::connect(&configuration.database.connection_string())
+    let connection_pool = PgPool::connect(&configuration.database.connection_string())
         .await
         .expect("Failed to connect to Postgres.");
 
     let addrs = format!("127.0.0.1:{}", configuration.application_port);
     let listener = TcpListener::bind(addrs)?;
 
-    let server = run(listener, connection).await?;
+    let server = run(listener, connection_pool).await?;
     server.await
 }
