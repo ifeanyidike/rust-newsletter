@@ -22,7 +22,7 @@ pub async fn subscribe(form: web::Form<FormData>, pool: web::Data<PgPool>) -> Ht
     );
 
     let _request_span_guard = request_span.enter();
-    
+
     tracing::info!(
         "request_id {} - Saving new subscriber details in the database",
         request_id

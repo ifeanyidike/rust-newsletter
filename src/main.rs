@@ -1,15 +1,20 @@
 //! main.rs
 //!
-
-use env_logger::Env;
-use newsletter::configuration::get_configuration;
 use newsletter::startup::run;
+use newsletter::telemetry::init_subscriber;
+use newsletter::{configuration::get_configuration, telemetry::get_subscriber};
 use sqlx::PgPool;
 use std::net::TcpListener;
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
-    env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
+    // env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
+    let subscriber = get_subscriber(
+        "newsletter".to_string(),
+        "info".to_string(),
+        std::io::stdout,
+    );
+    init_subscriber(subscriber);
 
     let configuration = get_configuration().expect("Failed to read configuration.");
     let connection_pool = PgPool::connect(&configuration.database.connection_string())
