@@ -11,23 +11,16 @@ pub struct FormData {
     name: String,
 }
 
-pub async fn subscribe(form: web::Form<FormData>, pool: web::Data<PgPool>) -> HttpResponse {
-    // Generate a random unique identifier (request_id or correlation_id) for logging
-    let request_id = Uuid::new_v4();
-    let request_span = tracing::info_span!(
-        "Adding a new subscriber.",
-        %request_id,
+#[tracing::instrument(
+    name = "Adding a new subscriber",
+    skip(form, pool),
+    fields(
         subscriber_email = %form.email,
         subscriber_name = %form.name
-    );
+    )
+)]
 
-    let _request_span_guard = request_span.enter();
-
-    tracing::info!(
-        "request_id {} - Saving new subscriber details in the database",
-        request_id
-    );
-
+pub async fn subscribe(form: web::Form<FormData>, pool: web::Data<PgPool>) -> HttpResponse {
     if let Err(error) = handle_subscription(&form, pool.as_ref()).await {
         tracing::error!("Failed to execute query: {:?}", error);
         return HttpResponse::InternalServerError().finish();
@@ -36,6 +29,11 @@ pub async fn subscribe(form: web::Form<FormData>, pool: web::Data<PgPool>) -> Ht
     tracing::info!("New subscriber details have been saved");
     HttpResponse::Ok().finish()
 }
+
+#[tracing::instrument(
+    name = "Saving new subscriber details in the database",
+    skip(form, pool)
+)]
 
 async fn handle_subscription(form: &FormData, pool: &PgPool) -> Result<PgQueryResult, Error> {
     let result = sqlx::query!(
@@ -51,7 +49,7 @@ async fn handle_subscription(form: &FormData, pool: &PgPool) -> Result<PgQueryRe
     .execute(pool)
     .await
     .map_err(|err| {
-        eprintln!("Error executing query: {:?}", err);
+        tracing::error!("Error executing query: {:?}", err);
         err
     })?;
 
