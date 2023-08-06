@@ -17,6 +17,7 @@ name = "newsletter"
 actix-web = "4"
 tokio = {version = "1", features = ["macros", "rt-multi-thread"]}
 serde = {version = "1", features = ["derive"]}
+serde-aux = "3"
 config = "0.11"
 uuid = { version = "0.8.1", features = ["v4"] }
 chrono = "0.4.15"
@@ -38,7 +39,8 @@ features = [
     "postgres",
     "uuid",
     "chrono",
-    "migrate"
+    "migrate",
+    "offline"
 ]
 
 [dev-dependencies]
